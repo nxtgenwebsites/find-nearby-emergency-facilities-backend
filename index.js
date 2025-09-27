@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import hospitalRoutes from './routes/hospitalRoutes.js'
+import visitorRoutes from './routes/visitorRoutes.js'
 
 dotenv.config();
 connectDB()
@@ -16,6 +17,7 @@ app.use(cors())
 
 
 app.use("/api/hospitals", hospitalRoutes);
+app.use("/api/visitor", visitorRoutes);
 
 app.listen(port ,() => {
     console.log(`Server is up and running at http://localhost:${port}`);
