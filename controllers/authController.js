@@ -222,3 +222,32 @@ export const verifyOTP = async (req, res) => {
         res.status(500).json({ error: "Failed to verify OTP" });
     }
 };
+
+export const resetPassword = async (req, res) => {
+    try {
+        const { id, password } = req.body;
+
+        // Validate input
+        if (!id || !password) {
+            return res.status(400).json({ message: "User ID and new password are required." });
+        }
+
+        // Find user
+        const user = await userModel.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Hash the new password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Update user's password
+        user.password = hashedPassword;
+        await user.save();
+
+        return res.status(200).json({ message: "Password reset successfully." });
+    } catch (error) {
+        console.error("Error resetting password:", error);
+        return res.status(500).json({ message: "Server error. Please try again later." });
+    }
+};

@@ -270,7 +270,6 @@ export const addUser = async (req, res) => {
     }
 };
 
-
 export const editUser = async (req, res) => {
     try {
         const { adminId, userId } = req.params; // admin id and user id
@@ -337,7 +336,6 @@ export const editUser = async (req, res) => {
         });
     }
 };
-
 
 export const getUserById = async (req, res) => {
     try {
