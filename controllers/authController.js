@@ -132,7 +132,7 @@ export const userVerifyByEmail = async (req, res) => {
 
         // Generate OTP
         const otp = generateOTP();
-        const expiresAt = new Date(Date.now() + 60 * 1000); // 1 min expiry
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
 
         // Delete old OTPs for this email
         await otpModel.deleteMany({ email });
@@ -168,7 +168,7 @@ export const userVerifyByEmail = async (req, res) => {
                 <p>Dear <b>${username}</b>,</p>
                 <p>Your OTP for verifying your account is:</p>
                 <h2 style="color:#0b6fc0;">${otp}</h2>
-                <p>This OTP will expire in <b>1 minute</b>.</p>
+                <p>This OTP will expire in <b>1 hour</b>.</p>
                 <p>If you did not request this, please ignore this email.</p>
                 <br/>
                 <p>Best regards,<br><b>Health Monitor Team</b></p>
@@ -249,5 +249,82 @@ export const resetPassword = async (req, res) => {
     } catch (error) {
         console.error("Error resetting password:", error);
         return res.status(500).json({ message: "Server error. Please try again later." });
+    }
+};
+
+export const changePassEmail = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        // Find user by email
+        const user = await userModel.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const username = user.first_name || "User";
+
+        // Generate OTP
+        const otp = generateOTP();
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+
+        // Delete old OTPs for this email
+        await otpModel.deleteMany({ email });
+
+        // Hash OTP before saving
+        const saltRounds = 10;
+        const hashedOTP = await bcrypt.hash(otp, saltRounds);
+
+        // Save hashed OTP in DB
+        await otpModel.create({
+            email,
+            otp: hashedOTP,
+            expiresAt,
+        });
+
+        // Email setup
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
+            auth: {
+                user: "healthcentreapp@gmail.com",
+                pass: "jier pzth qiau qvra", // ⚠️ move to .env in production
+            },
+        });
+
+        // Send email
+        await transporter.sendMail({
+            from: "Health Monitor <healthcentreapp@gmail.com>",
+            to: email,
+            subject: "OTP Verification - Health Monitor",
+            html: `
+                <p>Dear <b>${username}</b>,</p>
+                <p>Your OTP for verifying your account is:</p>
+                <h2 style="color:#0b6fc0;">${otp}</h2>
+                <p>This OTP will expire in <b>1 hour</b>.</p>
+                <p>If you did not request this, please ignore this email.</p>
+                <br/>
+                <p>Best regards,<br><b>Health Monitor Team</b></p>
+            `
+        });
+
+        res.status(200).json({
+            message: "OTP sent successfully!",
+            user: {
+                id: user._id,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                email: user.email,
+            }
+        });
+
+    } catch (error) {
+        console.error("OTP sending error:", error);
+        res.status(500).json({ error: "Failed to send OTP" });
     }
 };
