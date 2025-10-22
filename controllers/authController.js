@@ -154,8 +154,8 @@ export const userVerifyByEmail = async (req, res) => {
             port: 465,
             secure: true,
             auth: {
-                user: "healthcentreapp@gmail.com",
-                pass: "jier pzth qiau qvra", // ⚠️ use env variable in production
+                user: process.env.email,
+                pass: process.env.emailPass, 
             },
         });
 
@@ -292,8 +292,8 @@ export const changePassEmail = async (req, res) => {
             port: 465,
             secure: true,
             auth: {
-                user: "healthcentreapp@gmail.com",
-                pass: "jier pzth qiau qvra", // ⚠️ move to .env in production
+                user: process.env.email,
+                pass: process.env.emailPass,
             },
         });
 
