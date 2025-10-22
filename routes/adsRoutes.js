@@ -1,11 +1,35 @@
 import express from "express";
-import { upload } from "../middleware/uploadValidator.js";
-import { createAd, getAds, updateStatus } from "../controllers/adsController.js";
+import multer from "multer";
+import {
+    createAd,
+    getAds,
+    getAdsByOwner,
+    updateAd,
+    deleteAd,
+    updateStatus,
+    getActiveAds
+} from "../controllers/adsController.js";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
-router.post("/upload", upload, createAd);
-router.get("/get-all", getAds);
-router.patch("/:id/status", express.json(), updateStatus);
+// Create ad with owner ID in params
+router.post("/upload/:id", upload.single("image"), createAd);
+
+// Get all ads
+router.get("/", getAds);
+
+// Get ads by owner
+router.get("/owner/:ownerId", getAdsByOwner);
+
+// Update ad
+router.put("/:id", upload.single("image"), updateAd);
+
+// Delete ad
+router.delete("/:id", deleteAd);
+
+// Update status
+router.patch("/:id/status", updateStatus);
+router.get("/active", getActiveAds);
 
 export default router;

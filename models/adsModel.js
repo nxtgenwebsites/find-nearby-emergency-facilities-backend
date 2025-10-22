@@ -6,10 +6,15 @@ const AdSchema = new mongoose.Schema(
         country: { type: String, required: true, trim: true },
         startDate: { type: Date, required: true },
         endDate: { type: Date, required: true },
+
+        // 🔹 Owner (simple string field for user ID or username)
+        owner: { type: String, required: true, trim: true },
+
         impressionDays: { type: Number },
         link: { type: String, required: true, trim: true },
         imageUrl: { type: String, required: true },
         imagePublicId: { type: String },
+
         status: {
             type: String,
             enum: ["pending", "active", "inactive"],
@@ -19,6 +24,7 @@ const AdSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// 🔹 Auto-calculate impression days before saving
 AdSchema.pre("save", function (next) {
     if (this.startDate && this.endDate) {
         const diff = this.endDate.getTime() - this.startDate.getTime();
