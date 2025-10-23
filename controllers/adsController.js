@@ -1,5 +1,6 @@
 import Ad from "../models/adsModel.js";
 import cloudinary from "../config/cloudinary.js";
+import userModel from "../models/userModel.js";
 import { validateDimensions } from "../middleware/uploadValidator.js";
 
 const uploadToCloudinary = (buffer) => {
@@ -58,12 +59,29 @@ export const createAd = async (req, res) => {
     }
 };
 
-// Get All Ads
 export const getAds = async (req, res) => {
     try {
+        const id = req.params.id; // ✅ Get user ID from params
+
+        // ✅ Find user from DB
+        const user = await userModel.findById(id);
+
+        // ❌ If user not found
+        if (!id) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // ✅ Check if admin
+        if (user.role !== "admin") {
+            return res.status(403).json({ error: "Access denied. Admins only." });
+        }
+
+        // ✅ Fetch all ads if admin
         const ads = await Ad.find().sort({ createdAt: -1 });
         res.status(200).json(ads);
+
     } catch (err) {
+        console.error("Error in getAds:", err);
         res.status(500).json({ error: err.message });
     }
 };

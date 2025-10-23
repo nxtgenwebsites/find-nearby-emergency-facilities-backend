@@ -17,8 +17,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.post("/upload/:id", upload.single("image"), createAd);
 
 // Get all ads
-router.get("/", getAds);
-
+router.get("/get-ads/:id", getAds);
 // Get ads by owner
 router.get("/owner/:ownerId", getAdsByOwner);
 
