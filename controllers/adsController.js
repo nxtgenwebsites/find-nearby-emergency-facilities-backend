@@ -2,6 +2,7 @@ import Ad from "../models/adsModel.js";
 import cloudinary from "../config/cloudinary.js";
 import userModel from "../models/userModel.js";
 import { validateDimensions } from "../middleware/uploadValidator.js";
+import nodemailer from "nodemailer";
 
 const uploadToCloudinary = (buffer) => {
     return new Promise((resolve, reject) => {
@@ -200,6 +201,77 @@ export const getActiveAds = async (req, res) => {
 
         // Send response
         res.status(200).json(activeAds);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const sendEmail = async (to, subject, html) => {
+    try {
+        const transporter = nodemailer.createTransport({
+            service: "gmail", // or use custom SMTP settings
+            auth: {
+                user: process.env.email, // e.g. info@healthcentreapp.com
+                pass: process.env.emailPass,
+            },
+        });
+
+        await transporter.sendMail({
+            from: `"HealthCentreApp" <${process.env.EMAIL_USER}>`,
+            to,
+            subject,
+            html,
+        });
+
+        console.log("✅ Email sent to:", to);
+    } catch (error) {
+        console.error("❌ Email send failed:", error.message);
+    }
+  };
+
+// 🔹 Activate an Ad by ID and notify the owner
+export const activateAdById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 1️⃣ Find the ad by ID
+        const ad = await Ad.findById(id);
+        if (!ad) return res.status(404).json({ message: "Ad not found" });
+
+        // 2️⃣ Update status to active
+        ad.status = "active";
+        await ad.save();
+
+        // 3️⃣ Find the user by owner field
+        const user = await userModel.findOne({ _id: ad.owner });
+        if (!user || !user.email)
+            return res.status(404).json({ message: "Owner or email not found" });
+
+        // 4️⃣ Create email content
+        const formattedDate = new Date(ad.createdAt).toLocaleDateString();
+        const html = `
+      <p>Hi ${user.first_name || "there"},</p>
+      <p>Good news — your ad submitted for approval on <b>${formattedDate}</b> has been successfully approved and is now live on our website! 🎊</p>
+      <p>You can view your published ad here: <a href="https://find-nearby-emergency-facilities.vercel.app/" target="_blank">https://find-nearby-emergency-facilities.vercel.app/</a></p>
+      <p>Thank you for choosing <b>HealthCentreApp</b> to promote your listing. We’re excited to help you reach more potential buyers and get the visibility your ad deserves.</p>
+      <br/>
+      <p>Best regards,<br/>
+      <b>HealthCentreApp Team</b><br/>
+      <a href="https://healthcentreapp.com">healthcentreapp.com</a><br/>
+      info@healthcentreapp.com</p>
+    `;
+
+        // 5️⃣ Send the email
+        await sendEmail(
+            user.email,
+            "🎉 Your Ad Has Been Approved and Is Now Live!",
+            html
+        );
+
+        res.status(200).json({
+            message: "Ad activated and email sent successfully.",
+            ad,
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

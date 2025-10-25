@@ -7,7 +7,8 @@ import {
     updateAd,
     deleteAd,
     updateStatus,
-    getActiveAds
+    getActiveAds,
+    activateAdById
 } from "../controllers/adsController.js";
 
 const router = express.Router();
@@ -29,6 +30,6 @@ router.delete("/:id", deleteAd);
 
 // Update status
 router.patch("/:id/status", updateStatus);
-router.get("/active", getActiveAds);
+router.get("/active/:id", activateAdById);
 
 export default router;
