@@ -8,7 +8,8 @@ import {
     deleteAd,
     updateStatus,
     getActiveAds,
-    activateAdById
+    activateAdById,
+    sendCustomEmail
 } from "../controllers/adsController.js";
 
 const router = express.Router();
@@ -31,5 +32,6 @@ router.delete("/:id", deleteAd);
 // Update status
 router.patch("/:id/status", updateStatus);
 router.get("/active/:id", activateAdById);
+router.post("/cost-email", sendCustomEmail);
 
 export default router;

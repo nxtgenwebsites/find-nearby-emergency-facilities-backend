@@ -276,3 +276,47 @@ export const activateAdById = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+export const sendCustomEmail = async (req, res) => {
+    try {
+        const { to, subject, body, cost } = req.body;
+
+        if (!to || !subject || !body || !cost) {
+            return res.status(400).json({ message: "All fields are required." });
+        }
+
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.email,
+                pass: process.env.emailPass,
+            },
+        });
+
+        const htmlContent = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <p>${body}</p>
+          <p><b>Ad Cost:</b> ${cost}</p>
+          <hr/>
+          <p style="font-size: 13px; color: #666;">
+            Sent by <b>HealthCentreApp Team</b><br/>
+            <a href="https://healthcentreapp.com">healthcentreapp.com</a>
+          </p>
+        </div>
+      `;
+
+        await transporter.sendMail({
+            from: `"HealthCentreApp" <${process.env.email}>`,
+            to,
+            subject,
+            html: htmlContent,
+        });
+
+        console.log("✅ Custom email sent to:", to);
+        res.status(200).json({ message: "Email sent successfully." });
+    } catch (error) {
+        console.error("❌ Email send failed:", error);
+        res.status(500).json({ message: "Failed to send email.", error: error.message });
+    }
+  };
