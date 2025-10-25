@@ -312,8 +312,6 @@ export const sendCustomEmail = async (req, res) => {
             subject,
             html: htmlContent,
         });
-
-        console.log("✅ Custom email sent to:", to);
         res.status(200).json({ message: "Email sent successfully." });
     } catch (error) {
         console.error("❌ Email send failed:", error);

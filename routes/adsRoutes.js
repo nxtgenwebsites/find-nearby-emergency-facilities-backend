@@ -33,5 +33,6 @@ router.delete("/:id", deleteAd);
 router.patch("/:id/status", updateStatus);
 router.get("/active/:id", activateAdById);
 router.post("/cost-email", sendCustomEmail);
+router.get("/active", getActiveAds);
 
 export default router;
