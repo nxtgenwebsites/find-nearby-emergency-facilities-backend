@@ -6,6 +6,7 @@ const AdSchema = new mongoose.Schema(
         country: { type: String, required: true, trim: true },
         startDate: { type: Date, required: true },
         endDate: { type: Date, required: true },
+        cost: { type: String},
 
         // 🔹 Owner (simple string field for user ID or username)
         owner: { type: String, required: true, trim: true },

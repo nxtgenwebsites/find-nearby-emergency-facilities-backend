@@ -280,12 +280,13 @@ export const activateAdById = async (req, res) => {
 
 export const sendCustomEmail = async (req, res) => {
     try {
-        const { to, subject, body, cost } = req.body;
+        const { to, subject, body, cost, adId } = req.body;
 
-        if (!to || !subject || !body || !cost) {
-            return res.status(400).json({ message: "All fields are required." });
+        if (!to || !subject || !body || !cost || !adId) {
+            return res.status(400).json({ message: "All fields are required (to, subject, body, cost, adId)." });
         }
 
+        // 🔹 Send email
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
@@ -295,16 +296,16 @@ export const sendCustomEmail = async (req, res) => {
         });
 
         const htmlContent = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <p>${body}</p>
-          <p><b>Ad Cost:</b> ${cost}</p>
-          <hr/>
-          <p style="font-size: 13px; color: #666;">
-            Sent by <b>HealthCentreApp Team</b><br/>
-            <a href="https://healthcentreapp.com">healthcentreapp.com</a>
-          </p>
-        </div>
-      `;
+            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <p>${body}</p>
+                <p><b>Ad Cost:</b> ${cost}</p>
+                <hr/>
+                <p style="font-size: 13px; color: #666;">
+                    Sent by <b>HealthCentreApp Team</b><br/>
+                    <a href="https://healthcentreapp.com">healthcentreapp.com</a>
+                </p>
+            </div>
+        `;
 
         await transporter.sendMail({
             from: `"HealthCentreApp" <${process.env.email}>`,
@@ -312,9 +313,24 @@ export const sendCustomEmail = async (req, res) => {
             subject,
             html: htmlContent,
         });
-        res.status(200).json({ message: "Email sent successfully." });
+
+        // 🔹 Update cost in Ads collection
+        const updatedAd = await Ad.findByIdAndUpdate(
+            adId,
+            { cost },
+            { new: true }
+        );
+
+        if (!updatedAd) {
+            return res.status(404).json({ message: "Ad not found, email sent but cost not saved." });
+        }
+
+        res.status(200).json({
+            message: "Email sent successfully and cost updated in database.",
+            ad: updatedAd
+        });
     } catch (error) {
         console.error("❌ Email send failed:", error);
         res.status(500).json({ message: "Failed to send email.", error: error.message });
     }
-  };
+};
