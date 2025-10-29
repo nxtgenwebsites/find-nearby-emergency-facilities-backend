@@ -1,5 +1,5 @@
 import express from 'express';
-import { deleteUser, blockUser, unblockUser, getAllUsers, addUser, editUser, getUserById, updateUserInfo, updateNextOfKin } from '../controllers/userController.js';
+import { deleteUser, blockUser, unblockUser, getAllUsers, addUser, editUser, getUserById, updateUserInfo, changePassword } from '../controllers/userController.js';
 
 const router = express.Router();
 //  get users
@@ -23,8 +23,8 @@ router.put("/edit/:adminId/:userId", editUser);
 // Get user by ID
 router.get("/single-user/:id", getUserById);
 
-router.put("/update-kin/:userId", updateNextOfKin);
-
 router.put("/update-info/:userId", updateUserInfo);
+
+router.put("/update-password/:userId", changePassword);
 
 export default router;

@@ -273,7 +273,7 @@ export const addUser = async (req, res) => {
 export const editUser = async (req, res) => {
     try {
         const { adminId, userId } = req.params; // admin id and user id
-        const { first_name, last_name, email, password, role, status } = req.body;
+        const { first_name, last_name, email, password, role,       } = req.body;
 
         // 🔹 Check admin
         const admin = await userModel.findById(adminId);
@@ -368,74 +368,13 @@ export const getUserById = async (req, res) => {
     }
 };
 
-export const updateNextOfKin = async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const {
-            title,
-            first_name,
-            last_name,
-            relationship,
-            email,
-            country,
-            whatsapp_no,
-        } = req.body;
-
-        // Validate required fields
-        if (!first_name || !last_name || !relationship || !email) {
-            return res.status(400).json({ message: "Required fields are missing" });
-        }
-
-        // Find user
-        const user = await userModel.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        // Update or add Next of Kin (since it's an array)
-        if (user.next_of_kin && user.next_of_kin.length > 0) {
-            // Replace first existing kin (you can adjust logic if you want multiple)
-            user.next_of_kin[0] = {
-                title,
-                first_name,
-                last_name,
-                relationship,
-                email,
-                country,
-                whatsapp_no,
-            };
-        } else {
-            // Add new
-            user.next_of_kin.push({
-                title,
-                first_name,
-                last_name,
-                relationship,
-                email,
-                country,
-                whatsapp_no,
-            });
-        }
-
-        await user.save();
-
-        return res.status(200).json({
-            message: "Next of Kin details updated successfully",
-            next_of_kin: user.next_of_kin,
-        });
-    } catch (error) {
-        console.error("Error updating next of kin:", error);
-        return res.status(500).json({ message: "Server error", error: error.message });
-    }
-};
-
 export const updateUserInfo = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { first_name, last_name, email } = req.body;
+        const { title, first_name, last_name, email, gender, country } = req.body;
 
         // Validate required fields
-        if (!first_name || !last_name || !email) {
+        if (!title || !first_name || !last_name || !email || !gender || !country) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -445,23 +384,57 @@ export const updateUserInfo = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Update fields
-        user.first_name = first_name;
-        user.last_name = last_name;
+        // Update user fields
+        user.title = title;
+        user.firstName = first_name;
+        user.lastName = last_name;
         user.email = email;
+        user.gender = gender;
+        user.country = country;
 
         await user.save();
 
+        // Send response
         return res.status(200).json({
             message: "User information updated successfully",
             user: {
-                first_name: user.first_name,
-                last_name: user.last_name,
+                title: user.title,
+                firstName: user.first_name,
+                lastName: user.last_name,
                 email: user.email,
+                gender: user.gender,
+                country: user.country,
             },
         });
     } catch (error) {
         console.error("Error updating user info:", error);
         return res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+export const changePassword = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword)
+            return res.status(400).json({ message: "All fields required" });
+
+        const user = await userModel.findById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const match = await bcrypt.compare(currentPassword, user.password);
+        if (!match) return res.status(400).json({ message: "Wrong current password" });
+
+        const same = await bcrypt.compare(newPassword, user.password);
+        if (same) return res.status(400).json({ message: "Use a new password" });
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save();
+
+        res.status(200).json({ message: "Password updated" });
+    } catch (err) {
+        console.error("Change password error:", err);
+        res.status(500).json({ message: "Server error" });
     }
 };
