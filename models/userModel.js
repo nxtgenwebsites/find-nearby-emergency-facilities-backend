@@ -1,45 +1,40 @@
 import mongoose from "mongoose";
 
-const nextOfKinSchema = new mongoose.Schema({
-    title: { type: String },
-    first_name: { type: String },
-    last_name: { type: String },
-    relationship: { type: String },
-    email: { type: String },
-    country: { type: String },
-    whatsapp_no: { type: String },
-}, { _id: false });
-
 const userSchema = new mongoose.Schema({
-    first_name: {
+    title: {
         type: String,
+        required: true,
     },
-    last_name: {
+    firstName: {
         type: String,
+        required: true,
+    },
+    lastName: {
+        type: String,
+        required: true,
+    },
+    gender: {
+        type: String,
+        enum: ["male", "female"],
+        required: true,
+    },      
+    country: {
+        type: String,
+        required: true,
     },
     email: {
         type: String,
+        required: true,
         unique: true,
     },
     password: {
         type: String,
+        required: true,
     },
-    
-    next_of_kin: [nextOfKinSchema],
-
-    role: {
+    dpImageUrl: {
         type: String,
-        default: 'user'
+        default: "",
     },
-    isBlocked: {
-        type: Boolean,
-        default: false
-    },
-    isActive: {
-        type: Boolean,
-        default: false
-    }
 }, { timestamps: true });
 
-const userModel = mongoose.model('users', userSchema);
-export default userModel;
+export default mongoose.model("User", userSchema);

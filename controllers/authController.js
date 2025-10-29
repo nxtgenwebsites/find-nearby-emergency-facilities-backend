@@ -3,44 +3,72 @@ import jwt from 'jsonwebtoken';
 import userModel from '../models/userModel.js'
 import nodemailer from 'nodemailer'
 import otpModel from "../models/otpModel.js";
+import cloudinary from "../config/cloudinary.js"; // adjust the path if needed
+
+// Helper function to upload from buffer
+const uploadToCloudinary = (buffer) => {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            { folder: "user_profiles" }, // folder in Cloudinary
+            (error, result) => {
+                if (error) return reject(error);
+                resolve(result);
+            }
+        );
+        stream.end(buffer);
+    });
+};
 
 export const signupUser = async (req, res) => {
     try {
         const {
-            first_name,
-            last_name,
+            title,
+            firstName,
+            lastName,
+            gender,
+            country,
             email,
             password,
-            next_of_kin
         } = req.body;
 
-        // Required fields validation
-        if (!first_name || !last_name || !email || !password) {
+        // Required field validation
+        if (!title || !firstName || !lastName || !gender || !country || !email || !password) {
             return res.status(400).json({ message: "All required fields must be provided" });
         }
 
-        // Check if user exists
+        // Check if user already exists
         const existingUser = await userModel.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: "User with this email already exists" });
         }
 
         // Hash password
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create new user
+        // Default empty image URL
+        let dpImageUrl = "";
+
+        // If image file provided → upload buffer to Cloudinary
+        if (req.file && req.file.buffer) {
+            const uploadResult = await uploadToCloudinary(req.file.buffer);
+            dpImageUrl = uploadResult.secure_url;
+        }
+
+        // Create new user in DB
         const newUser = new userModel({
-            first_name,
-            last_name,
+            title,
+            firstName,
+            lastName,
+            gender,
+            country,
             email,
             password: hashedPassword,
-            next_of_kin: Array.isArray(next_of_kin) ? next_of_kin : (next_of_kin ? [next_of_kin] : [])
+            dpImageUrl,
         });
 
         await newUser.save();
 
-        // Generate JWT token
+        // Generate JWT
         const token = jwt.sign(
             { id: newUser._id, email: newUser.email },
             process.env.JWT_SECRET,
@@ -51,19 +79,22 @@ export const signupUser = async (req, res) => {
             message: "User signed up successfully",
             user: {
                 id: newUser._id,
-                first_name: newUser.first_name,
-                last_name: newUser.last_name,
+                title: newUser.title,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                gender: newUser.gender,
+                country: newUser.country,
                 email: newUser.email,
-                next_of_kin: newUser.next_of_kin
+                dpImageUrl: newUser.dpImageUrl,
             },
-            token
+            token,
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Signup Error:", error);
         res.status(500).json({ error: "Internal server error" });
     }
-};
+  };
 
 export const loginUser = async (req, res) => {
     try {
@@ -161,9 +192,9 @@ export const userVerifyByEmail = async (req, res) => {
 
         // Send email
         await transporter.sendMail({
-            from: "Health Monitor <healthcentreapp@gmail.com>",
+            from: "Health Centre App <healthcentreapp@gmail.com>",
             to: email,
-            subject: "OTP Verification - Health Monitor",
+            subject: "OTP Verification - Health Centre App",
             html: `
                 <p>Dear <b>${username}</b>,</p>
                 <p>Your OTP for verifying your account is:</p>
@@ -171,7 +202,7 @@ export const userVerifyByEmail = async (req, res) => {
                 <p>This OTP will expire in <b>1 hour</b>.</p>
                 <p>If you did not request this, please ignore this email.</p>
                 <br/>
-                <p>Best regards,<br><b>Health Monitor Team</b></p>
+                <p>Best regards,<br><b>Health Centre App Team</b></p>
             `
         });
 
