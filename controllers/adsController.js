@@ -190,9 +190,14 @@ export const updateStatus = async (req, res) => {
 // Get only active ads
 export const getActiveAds = async (req, res) => {
     try {
-        // Find ads where status = "active"
-        const activeAds = await Ad.find({ status: "active" })
-            .select("sponsorName country link imageUrl startDate endDate owner");
+        const today = new Date();
+
+        // Find ads that are active and within date range
+        const activeAds = await Ad.find({
+            status: "active",
+            startDate: { $lte: today },
+            endDate: { $gte: today }
+        }).select("sponsorName country link imageUrl startDate endDate owner");
 
         // If none found
         if (!activeAds.length) {
