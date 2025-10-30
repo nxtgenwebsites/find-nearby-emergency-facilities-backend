@@ -104,27 +104,25 @@ export const getAdsByOwner = async (req, res) => {
     }
 };
 
-// Update Ad (NEW - tumhare frontend mein chahiye)
+// Update Ad (status ko ignore kare)
 export const updateAd = async (req, res) => {
     try {
         const { id } = req.params;
-        const { sponsorName, country, startDate, endDate, link, impressionDays, status } = req.body;
+        const { sponsorName, country, startDate, endDate, link, impressionDays } = req.body;
 
         const ad = await Ad.findById(id);
         if (!ad) return res.status(404).json({ error: "Ad not found" });
 
-        // Update fields
+        // Update allowed fields only
         ad.sponsorName = sponsorName || ad.sponsorName;
         ad.country = country || ad.country;
         ad.startDate = startDate || ad.startDate;
         ad.endDate = endDate || ad.endDate;
         ad.link = link || ad.link;
         ad.impressionDays = impressionDays || ad.impressionDays;
-        ad.status = status || ad.status;
 
         // Handle new image upload
         if (req.file) {
-            // Delete old image from cloudinary
             if (ad.imagePublicId) {
                 await cloudinary.uploader.destroy(ad.imagePublicId);
             }
