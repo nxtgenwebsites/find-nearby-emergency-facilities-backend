@@ -1,5 +1,11 @@
 import mongoose from "mongoose";
 
+const notificationSchema = new mongoose.Schema({
+    message: { type: String, required: true },
+    isRead: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now }
+});
+
 const userSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -46,7 +52,9 @@ const userSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: false
-    }
+    },
+    // 👇 ye naya field add kar do
+    notifications: [notificationSchema],
 }, { timestamps: true });
 
 export default mongoose.model("User", userSchema);

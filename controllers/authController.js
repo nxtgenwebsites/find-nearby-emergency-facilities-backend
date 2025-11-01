@@ -19,6 +19,7 @@ const uploadToCloudinary = (buffer) => {
     });
 };
 
+// ✅ Signup User (now adds welcome notification)
 export const signupUser = async (req, res) => {
     try {
         const {
@@ -31,30 +32,28 @@ export const signupUser = async (req, res) => {
             password,
         } = req.body;
 
-        // Required field validation
+        // 1️⃣ Required field validation
         if (!title || !firstName || !lastName || !gender || !country || !email || !password) {
             return res.status(400).json({ message: "All required fields must be provided" });
         }
 
-        // Check if user already exists
+        // 2️⃣ Check if user already exists
         const existingUser = await userModel.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: "User with this email already exists" });
         }
 
-        // Hash password
+        // 3️⃣ Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Default empty image URL
+        // 4️⃣ Handle profile image (optional)
         let dpImageUrl = "";
-
-        // If image file provided → upload buffer to Cloudinary
         if (req.file && req.file.buffer) {
             const uploadResult = await uploadToCloudinary(req.file.buffer);
             dpImageUrl = uploadResult.secure_url;
         }
 
-        // Create new user in DB
+        // 5️⃣ Create new user
         const newUser = new userModel({
             title,
             firstName,
@@ -66,15 +65,23 @@ export const signupUser = async (req, res) => {
             dpImageUrl,
         });
 
+        // 6️⃣ Add default welcome notification
+        newUser.notifications.push({
+            message: `Your account has been created successfully.`,
+            type: "welcome",
+            date: new Date(),
+        });
+
         await newUser.save();
 
-        // Generate JWT
+        // 7️⃣ Generate JWT
         const token = jwt.sign(
             { id: newUser._id, email: newUser.email },
             process.env.JWT_SECRET,
             { expiresIn: "30d" }
         );
 
+        // 8️⃣ Response
         res.status(201).json({
             message: "User signed up successfully",
             user: {
@@ -89,12 +96,11 @@ export const signupUser = async (req, res) => {
             },
             token,
         });
-
     } catch (error) {
         console.error("Signup Error:", error);
         res.status(500).json({ error: "Internal server error" });
     }
-  };
+};
 
 export const loginUser = async (req, res) => {
     try {
