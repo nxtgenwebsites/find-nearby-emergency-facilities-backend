@@ -438,3 +438,58 @@ export const changePassword = async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 };
+
+// Get top 5 unread notifications for a user
+export const getTopNotifications = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await userModel.findById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Filter only unread notifications
+        const unreadNotifications = user.notifications.filter(n => !n.isRead);
+
+        // Sort unread notifications by latest
+        const topNotifications = unreadNotifications
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .slice(0, 5);
+
+        res.status(200).json({ notifications: topNotifications });
+    } catch (error) {
+        console.error("Get Notifications Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+export const markTopNotificationsAsRead = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await userModel.findById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Filter only unread notifications, sort (latest first), get top 5
+        const unreadTopFive = [...user.notifications]
+            .filter(n => !n.isRead)
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .slice(0, 5);
+
+        // Mark those 5 as read
+        unreadTopFive.forEach(n => {
+            const index = user.notifications.findIndex(
+                x => x._id.toString() === n._id.toString()
+            );
+            if (index !== -1) user.notifications[index].isRead = true;
+        });
+
+        await user.save();
+
+        res.status(200).json({ message: "Top 5 unread notifications marked as read" });
+    } catch (error) {
+        console.error("Mark Read Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
