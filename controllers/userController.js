@@ -40,7 +40,7 @@ export const getAllUsers = async (req, res) => {
             error: error.message
         });
     }
-  };
+};
 
 export const deleteUser = async (req, res) => {
     try {
@@ -204,7 +204,7 @@ export const unblockUser = async (req, res) => {
 export const addUser = async (req, res) => {
     try {
         const { adminId } = req.params; // Admin ID from URL
-        const { first_name, last_name, email, password, role, status } = req.body;
+        const { title, firstName, lastName, gender, country, email, password, role } = req.body;
 
         // 🔹 Check if admin exists and has admin role
         const admin = await userModel.findById(adminId);
@@ -216,7 +216,7 @@ export const addUser = async (req, res) => {
         }
 
         // 🔹 Validate required fields
-        if (!first_name || !last_name || !email || !password) {
+        if (!title || !firstName || !lastName || !gender || !country || !email || !password) {
             return res.status(400).json({
                 success: false,
                 message: "All required fields must be provided",
@@ -236,14 +236,16 @@ export const addUser = async (req, res) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // 🔹 Create new user (Next of Kin removed)
+        // 🔹 Create new user (notification array auto-created empty)
         const newUser = new userModel({
-            first_name,
-            last_name,
+            title,
+            firstName,
+            lastName,
+            gender,
+            country,
             email,
             password: hashedPassword,
-            role: role || "User", // Default role
-            status: status || "Active", // Default status
+            role: role || "user", // Default role
         });
 
         await newUser.save();
@@ -254,15 +256,19 @@ export const addUser = async (req, res) => {
             message: "User added successfully",
             user: {
                 id: newUser._id,
-                first_name: newUser.first_name,
-                last_name: newUser.last_name,
+                title: newUser.title,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                gender: newUser.gender,
+                country: newUser.country,
                 email: newUser.email,
                 role: newUser.role,
-                status: newUser.status,
+                isBlocked: newUser.isBlocked,
+                isActive: newUser.isActive,
             },
         });
     } catch (error) {
-        console.error(error);
+        console.error("Error adding user:", error);
         res.status(500).json({
             success: false,
             message: "Internal server error",
@@ -272,10 +278,10 @@ export const addUser = async (req, res) => {
 
 export const editUser = async (req, res) => {
     try {
-        const { adminId, userId } = req.params; // admin id and user id
-        const { first_name, last_name, email, password, role,       } = req.body;
+        const { adminId, userId } = req.params;
+        const { title, firstName, lastName, gender, country, email, password, role } = req.body;
 
-        // 🔹 Check admin
+        // 🔹 Check if admin exists and has admin role
         const admin = await userModel.findById(adminId);
         if (!admin || admin.role !== "admin") {
             return res.status(403).json({
@@ -293,15 +299,17 @@ export const editUser = async (req, res) => {
             });
         }
 
-        // 🔹 Prepare update fields
+        // 🔹 Prepare updated fields
         const updatedData = {};
-        if (first_name) updatedData.first_name = first_name;
-        if (last_name) updatedData.last_name = last_name;
+        if (title) updatedData.title = title;
+        if (firstName) updatedData.firstName = firstName;
+        if (lastName) updatedData.lastName = lastName;
+        if (gender) updatedData.gender = gender;
+        if (country) updatedData.country = country;
         if (email) updatedData.email = email;
         if (role) updatedData.role = role;
-        if (status) updatedData.status = status;
 
-        // 🔹 If password provided, hash it
+        // 🔹 Hash password if provided
         if (password) {
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -315,21 +323,23 @@ export const editUser = async (req, res) => {
             { new: true }
         );
 
-        // ✅ Success
+        // ✅ Success response
         res.status(200).json({
             success: true,
             message: "User updated successfully",
             user: {
                 id: updatedUser._id,
-                first_name: updatedUser.first_name,
-                last_name: updatedUser.last_name,
+                title: updatedUser.title,
+                firstName: updatedUser.firstName,
+                lastName: updatedUser.lastName,
+                gender: updatedUser.gender,
+                country: updatedUser.country,
                 email: updatedUser.email,
                 role: updatedUser.role,
-                status: updatedUser.status,
             },
         });
     } catch (error) {
-        console.error(error);
+        console.error("Error editing user:", error);
         res.status(500).json({
             success: false,
             message: "Internal server error",
@@ -439,7 +449,6 @@ export const changePassword = async (req, res) => {
     }
 };
 
-// Get top 5 unread notifications for a user
 export const getTopNotifications = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -461,7 +470,6 @@ export const getTopNotifications = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-
 
 export const markTopNotificationsAsRead = async (req, res) => {
     try {
@@ -492,4 +500,3 @@ export const markTopNotificationsAsRead = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-
