@@ -456,11 +456,8 @@ export const getTopNotifications = async (req, res) => {
         const user = await userModel.findById(userId);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // Filter only unread notifications
-        const unreadNotifications = user.notifications.filter(n => !n.isRead);
-
-        // Sort unread notifications by latest
-        const topNotifications = unreadNotifications
+        // Sort all notifications by latest (read or unread)
+        const topNotifications = user.notifications
             .sort((a, b) => b.createdAt - a.createdAt)
             .slice(0, 5);
 
@@ -470,6 +467,7 @@ export const getTopNotifications = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 
 export const markTopNotificationsAsRead = async (req, res) => {
     try {
